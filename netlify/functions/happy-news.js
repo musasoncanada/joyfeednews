@@ -1,15 +1,8 @@
-// /.netlify/functions/happy-news
-// Fast mode + timeouts + concurrency + persistent cache (Netlify Blobs)
-// Requires: "rss-parser": "^3.13.0"
-// Enable Netlify Blobs (Site settings → Labs/Features) or leave as in-memory only.
-
+// /.netlify/functions/happy-news — SAFE MODE
 const Parser = require('rss-parser');
-const parser = new Parser({
-  timeout: 20000,
-  headers: { 'User-Agent': 'JoyFeedNewsBot/1.0 (+https://joyfeednews.com)' }
-});
+const parser = new Parser({ timeout: 20000, headers: { 'User-Agent': 'JoyFeedNewsBot/1.0 (+https://joyfeednews.com)' } });
 
-// ---------- Reputable feeds ----------
+// Reputable feeds
 const REGION_FEEDS = {
   Canada: [
     'https://www.cbc.ca/cmlink/rss-world',
@@ -52,7 +45,6 @@ const REGION_FEEDS = {
     'https://rss.dw.com/rdf/rss-en-all',
     'https://www.theguardian.com/world/rss'
   ],
-  // Always-on positive verticals
   Common: [
     'https://www.goodnewsnetwork.org/category/news/feed/',
     'https://www.positive.news/feed/',
@@ -64,28 +56,8 @@ const REGION_FEEDS = {
   ]
 };
 
-// Ultra-reliable subset used for fast mode (first paint)
-const FAST_START = [
-  'https://www.goodnewsnetwork.org/category/news/feed/',
-  'https://www.positive.news/feed/',
-  'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml',
-  'https://www.nationalgeographic.com/animals/feed/rss'
-];
-
-// ---------- Positivity / category ----------
-const POSITIVE_HINTS = [
-  'wholesome','heartwarming','uplifting','hope','kindness','donates','rescued',
-  'saved','breakthrough','cure','reunited','restored','revived','community',
-  'wildlife','conservation','clean energy','scholarship','celebrates','volunteer',
-  'inspiring','smile','teacher','students','neighborhood','fundraiser','award',
-  'grant','renewable','reforestation','rehabilitation','sanctuary','success'
-];
-const NEGATIVE_FLAGS = [
-  'dies','dead','death','fatal','shoot','war','conflict','assault','crime','lawsuit','suicide',
-  'murder','fraud','collapse','recession','covid','ebola','hiv','abuse','crash','explosion',
-  'bomb','kill','killed','hate','disaster','flood','wildfire','hostage','terror','stabbing',
-  'injured','arrested','charges','charged','indicted','sanction'
-];
+const POSITIVE_HINTS = ['wholesome','heartwarming','uplifting','hope','kindness','donates','rescued','saved','breakthrough','cure','reunited','restored','revived','community','wildlife','conservation','clean energy','scholarship','celebrates','volunteer','inspiring','smile','teacher','students','neighborhood','fundraiser','award','grant','renewable','reforestation','rehabilitation','sanctuary','success'];
+const NEGATIVE_FLAGS = ['dies','dead','death','fatal','shoot','war','conflict','assault','crime','lawsuit','suicide','murder','fraud','collapse','recession','covid','ebola','hiv','abuse','crash','explosion','bomb','kill','killed','hate','disaster','flood','wildfire','hostage','terror','stabbing','injured','arrested','charges','charged','indicted','sanction'];
 const CATEGORY_RULES = [
   { name: 'Community',  words: ['community','neighbors','volunteer','teacher','students','school','donate','fundraiser','local','town','village'] },
   { name: 'Wildlife',   words: ['wildlife','conservation','habitat','rescue','species','sanctuary','marine','turtle','whale','elephant','rhino','bird','rehabilitation'] },
@@ -95,11 +67,10 @@ const CATEGORY_RULES = [
   { name: 'Arts',       words: ['artist','art','music','orchestra','film','festival','museum','exhibit'] }
 ];
 
-// ---------- Helpers ----------
-const LIMIT = 140;            // overall cap
-const PAGE_SIZE = 60;         // default items returned (keep small for speed)
-const FEED_TIMEOUT = 4000;    // 4s per feed
-const CONCURRENCY = 6;        // fetch N feeds at a time
+const LIMIT = 140;
+const PAGE_SIZE = 60;
+const FEED_TIMEOUT = 5000; // 5s per feed
+const CONCURRENCY = 6;
 const CACHE_MS = 10 * 60 * 1000;
 
 let memoryCache = { at: 0, key: '', data: null };
@@ -152,19 +123,21 @@ function normalizeItem(item, feedTitle, feedUrl) {
   };
 }
 
-// Fetch with timeout and parse (rss-parser works with strings as well)
-async function fetchFeedWithTimeout(url, ms = FEED_TIMEOUT) {
-  const ctrl = new AbortController();
-  const id = setTimeout(() => ctrl.abort(), ms);
-  try {
-    const res = await fetch(url, { signal: ctrl.signal, headers: { 'User-Agent': 'JoyFeedNewsBot/1.0' } });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    const feed = await parser.parseString(text);
-    return (feed.items || []).map(i => normalizeItem(i, feed.title, url));
-  } finally {
-    clearTimeout(id);
-  }
+// Timeout wrapper for parser.parseURL
+function parseWithTimeout(url, ms = FEED_TIMEOUT) {
+  return new Promise((resolve) => {
+    let done = false;
+    const timer = setTimeout(() => { if (!done) { done = true; resolve({ items: [], title: '' }); } }, ms);
+    parser.parseURL(url).then(feed => {
+      if (done) return;
+      clearTimeout(timer); done = true;
+      resolve(feed || { items: [], title: '' });
+    }).catch(() => {
+      if (done) return;
+      clearTimeout(timer); done = true;
+      resolve({ items: [], title: '' });
+    });
+  });
 }
 
 // Simple concurrency limiter
@@ -174,33 +147,71 @@ async function mapConcurrent(items, fn, limit = CONCURRENCY) {
   const workers = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
     while (i < items.length) {
       const idx = i++;
-      try { ret[idx] = await fn(items[idx]); }
-      catch { ret[idx] = []; }
+      try { ret[idx] = await fn(items[idx]); } catch { ret[idx] = { items: [], title: '' }; }
     }
   });
   await Promise.all(workers);
   return ret;
 }
 
-// ---------- Persistent cache via Netlify Blobs ----------
-async function blobGet(key) {
-  try {
-    // eslint-disable-next-line no-undef
-    const store = await import('@netlify/blobs');
-    const b = store.getStore('joyfeed-cache');
-    const v = await b.get(key, { type: 'json' });
-    return v || null;
-  } catch { return null; }
-}
-async function blobSet(key, val) {
-  try {
-    // eslint-disable-next-line no-undef
-    const store = await import('@netlify/blobs');
-    const b = store.getStore('joyfeed-cache');
-    await b.set(key, JSON.stringify(val), { contentType: 'application/json' });
-  } catch {}
+function cacheKey({ q, cat, region }) {
+  return `safe:${(region||'all').toLowerCase()}:${(cat||'').toLowerCase()}:${(q||'').toLowerCase()}`;
 }
 
-// Build a cache key based on filters + mode
-function cacheKey({ q, cat, region, fast }) {
-  re
+exports.handler = async (event) => {
+  const now = Date.now();
+  const params = new URLSearchParams(event.queryStringParameters || {});
+  const q = (params.get('q') || '').trim();
+  const categoryFilter = (params.get('category') || '').trim();
+  const regionFilter = (params.get('region') || '').trim();
+
+  const requestedRegionKey = Object.keys(REGION_FEEDS).find(r => r.toLowerCase() === regionFilter.toLowerCase());
+  const feeds = requestedRegionKey
+    ? [...(REGION_FEEDS[requestedRegionKey] || []), ...REGION_FEEDS.Common]
+    : Object.values(REGION_FEEDS).flat();
+
+  const key = cacheKey({ q, cat: categoryFilter, region: regionFilter });
+  const canUseMem = !q && !categoryFilter;
+  if (canUseMem && memoryCache.data && memoryCache.key === key && (now - memoryCache.at) < CACHE_MS) {
+    return json(memoryCache.data, 200, true);
+  }
+
+  try {
+    const parsed = await mapConcurrent(feeds, (u) => parseWithTimeout(u, FEED_TIMEOUT), CONCURRENCY);
+    let items = dedupe(parsed.flatMap(feed =>
+      (feed.items || []).map(i => normalizeItem(i, feed.title, feed.link || ''))
+    ))
+      .map(i => ({ ...i, categories: categorize(`${i.title} ${i.excerpt}`) }))
+      .filter(i => isLikelyPositive(`${i.title} ${i.excerpt}`))
+      .sort((a,b) => new Date(b.isoDate) - new Date(a.isoDate))
+      .slice(0, LIMIT);
+
+    if (q) {
+      const words = q.toLowerCase().split(/\s+/);
+      items = items.filter(i => {
+        const blob = `${i.title} ${i.excerpt} ${i.site} ${i.sourceTitle} ${i.categories.join(' ')} ${i.region || ''}`.toLowerCase();
+        return words.every(w => blob.includes(w));
+      });
+    }
+    if (categoryFilter) items = items.filter(i => i.categories.some(c => c.toLowerCase() === categoryFilter.toLowerCase()));
+    if (regionFilter) items = items.filter(i => (i.region || '').toLowerCase() === regionFilter.toLowerCase());
+
+    const payload = { updatedAt: new Date().toISOString(), count: items.length, items: items.slice(0, PAGE_SIZE), mode: 'safe' };
+    if (canUseMem) memoryCache = { at: now, key, data: payload };
+    return json(payload, 200, true);
+  } catch (err) {
+    return json({ error: 'Failed to load feeds', details: String(err) }, 500, false);
+  }
+};
+
+function json(body, status=200, cacheable=false) {
+  return {
+    statusCode: status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': cacheable ? 'public, max-age=300, stale-while-revalidate=120' : 'no-store'
+    },
+    body: JSON.stringify(body)
+  };
+}
