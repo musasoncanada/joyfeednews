@@ -1,14 +1,15 @@
 // /.netlify/functions/happy-news
-// Reputable sources + Region filtering + positivity filter
+// Fast mode + timeouts + concurrency + persistent cache (Netlify Blobs)
+// Requires: "rss-parser": "^3.13.0"
+// Enable Netlify Blobs (Site settings → Labs/Features) or leave as in-memory only.
+
 const Parser = require('rss-parser');
 const parser = new Parser({
   timeout: 20000,
   headers: { 'User-Agent': 'JoyFeedNewsBot/1.0 (+https://joyfeednews.com)' }
 });
 
-/**
- * REGION FEEDS (expanded with extra reputable sources)
- */
+// ---------- Reputable feeds ----------
 const REGION_FEEDS = {
   Canada: [
     'https://www.cbc.ca/cmlink/rss-world',
@@ -20,10 +21,10 @@ const REGION_FEEDS = {
     'https://www.nationalobserver.com/rss.xml'
   ],
   Africa: [
+    'https://feeds.bbci.co.uk/news/world/africa/rss.xml',
     'https://www.bbc.co.uk/africa/index.xml',
     'https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf',
     'https://www.reutersagency.com/feed/?best-sectors=africa&post_type=best',
-    'https://feeds.bbci.co.uk/news/world/africa/rss.xml',
     'https://www.theafricareport.com/feed/',
     'https://www.dailymaverick.co.za/section/news/feed/'
   ],
@@ -51,8 +52,7 @@ const REGION_FEEDS = {
     'https://rss.dw.com/rdf/rss-en-all',
     'https://www.theguardian.com/world/rss'
   ],
-
-  // Always-on “positive-leaning” verticals
+  // Always-on positive verticals
   Common: [
     'https://www.goodnewsnetwork.org/category/news/feed/',
     'https://www.positive.news/feed/',
@@ -64,7 +64,15 @@ const REGION_FEEDS = {
   ]
 };
 
-// --- Positivity filter, categories, dedupe, handler ---
+// Ultra-reliable subset used for fast mode (first paint)
+const FAST_START = [
+  'https://www.goodnewsnetwork.org/category/news/feed/',
+  'https://www.positive.news/feed/',
+  'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml',
+  'https://www.nationalgeographic.com/animals/feed/rss'
+];
+
+// ---------- Positivity / category ----------
 const POSITIVE_HINTS = [
   'wholesome','heartwarming','uplifting','hope','kindness','donates','rescued',
   'saved','breakthrough','cure','reunited','restored','revived','community',
@@ -87,8 +95,14 @@ const CATEGORY_RULES = [
   { name: 'Arts',       words: ['artist','art','music','orchestra','film','festival','museum','exhibit'] }
 ];
 
-let cache = { at: 0, data: null };
+// ---------- Helpers ----------
+const LIMIT = 140;            // overall cap
+const PAGE_SIZE = 60;         // default items returned (keep small for speed)
+const FEED_TIMEOUT = 4000;    // 4s per feed
+const CONCURRENCY = 6;        // fetch N feeds at a time
 const CACHE_MS = 10 * 60 * 1000;
+
+let memoryCache = { at: 0, key: '', data: null };
 
 function stripHtml(s='') { return s.replace(/<[^>]+>/g,''); }
 function originFromLink(url='') { try { return new URL(url).hostname.replace(/^www\./,''); } catch { return ''; } }
@@ -100,25 +114,6 @@ function inferRegion(feedUrl) {
   }
   return null;
 }
-
-function normalizeItem(item, feedTitle, feedUrl) {
-  const excerpt = stripHtml(item.contentSnippet || item.content || '').trim();
-  const image =
-    (item.enclosure && item.enclosure.url) ||
-    (item.media && item.media.content && item.media.content.url) || null;
-  return {
-    id: (item.guid || item.link || item.title || '').slice(0,180),
-    title: item.title || '',
-    link: item.link || item.guid || '',
-    site: originFromLink(item.link),
-    sourceTitle: feedTitle || originFromLink(item.link),
-    isoDate: item.isoDate || item.pubDate || new Date().toISOString(),
-    excerpt: excerpt.slice(0, 300),
-    image,
-    region: inferRegion(feedUrl)
-  };
-}
-
 function isLikelyPositive(txt='') {
   const t = txt.toLowerCase();
   if (NEGATIVE_FLAGS.some(w => t.includes(w))) return false;
@@ -139,66 +134,73 @@ function dedupe(items) {
     if (!seen.has(key)) { seen.add(key); out.push(it); }
   } return out;
 }
-
-exports.handler = async (event) => {
-  try {
-    const now = Date.now();
-    const params = new URLSearchParams(event.queryStringParameters || {});
-    const q = (params.get('q') || '').trim().toLowerCase();
-    const categoryFilter = (params.get('category') || '').trim().toLowerCase();
-    const regionFilter = (params.get('region') || '').trim().toLowerCase();
-
-    const requestedRegionKey = Object.keys(REGION_FEEDS).find(r => r.toLowerCase() === regionFilter);
-    const FEEDS = requestedRegionKey
-      ? [...(REGION_FEEDS[requestedRegionKey] || []), ...REGION_FEEDS.Common]
-      : Object.values(REGION_FEEDS).flat();
-
-    const canUseCache = !q && !categoryFilter && !regionFilter;
-    if (cache.data && (now - cache.at) < CACHE_MS && canUseCache) {
-      return json(cache.data, 200, true);
-    }
-
-    const results = await Promise.allSettled(
-      FEEDS.map(async (url) => {
-        const feed = await parser.parseURL(url);
-        return (feed.items || [])
-          .map(i => normalizeItem(i, feed.title, url))
-          .map(i => ({ ...i, categories: categorize(`${i.title} ${i.excerpt}`) }))
-          .filter(i => isLikelyPositive(`${i.title} ${i.excerpt}`));
-      })
-    );
-
-    let items = dedupe(results.flatMap(r => r.status === 'fulfilled' ? r.value : []))
-      .sort((a,b) => new Date(b.isoDate) - new Date(a.isoDate));
-
-    if (q) {
-      const words = q.split(/\s+/);
-      items = items.filter(i => {
-        const blob = `${i.title} ${i.excerpt} ${i.site} ${i.sourceTitle} ${i.categories.join(' ')} ${i.region || ''}`.toLowerCase();
-        return words.every(w => blob.includes(w));
-      });
-    }
-    if (categoryFilter) items = items.filter(i => i.categories.some(c => c.toLowerCase() === categoryFilter));
-    if (regionFilter) items = items.filter(i => (i.region || '').toLowerCase() === regionFilter);
-
-    items = items.slice(0, 160);
-
-    const payload = { updatedAt: new Date().toISOString(), count: items.length, items };
-    if (canUseCache) cache = { at: now, data: payload };
-    return json(payload, 200, true);
-  } catch (err) {
-    return json({ error: 'Failed to fetch feeds', details: String(err) }, 500, false);
-  }
-};
-
-function json(body, status=200, cacheable=false) {
+function normalizeItem(item, feedTitle, feedUrl) {
+  const excerpt = stripHtml(item.contentSnippet || item.content || '').trim();
+  const image =
+    (item.enclosure && item.enclosure.url) ||
+    (item.media && item.media.content && item.media.content.url) || null;
   return {
-    statusCode: status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Access-Control-Allow-Origin': '*',
-      'Cache-Control': cacheable ? 'public, max-age=300, stale-while-revalidate=120' : 'no-store'
-    },
-    body: JSON.stringify(body)
+    id: (item.guid || item.link || item.title || '').slice(0,180),
+    title: item.title || '',
+    link: item.link || item.guid || '',
+    site: originFromLink(item.link),
+    sourceTitle: feedTitle || originFromLink(item.link),
+    isoDate: item.isoDate || item.pubDate || new Date().toISOString(),
+    excerpt: excerpt.slice(0, 300),
+    image,
+    region: inferRegion(feedUrl)
   };
 }
+
+// Fetch with timeout and parse (rss-parser works with strings as well)
+async function fetchFeedWithTimeout(url, ms = FEED_TIMEOUT) {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal, headers: { 'User-Agent': 'JoyFeedNewsBot/1.0' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const feed = await parser.parseString(text);
+    return (feed.items || []).map(i => normalizeItem(i, feed.title, url));
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+// Simple concurrency limiter
+async function mapConcurrent(items, fn, limit = CONCURRENCY) {
+  const ret = [];
+  let i = 0;
+  const workers = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
+    while (i < items.length) {
+      const idx = i++;
+      try { ret[idx] = await fn(items[idx]); }
+      catch { ret[idx] = []; }
+    }
+  });
+  await Promise.all(workers);
+  return ret;
+}
+
+// ---------- Persistent cache via Netlify Blobs ----------
+async function blobGet(key) {
+  try {
+    // eslint-disable-next-line no-undef
+    const store = await import('@netlify/blobs');
+    const b = store.getStore('joyfeed-cache');
+    const v = await b.get(key, { type: 'json' });
+    return v || null;
+  } catch { return null; }
+}
+async function blobSet(key, val) {
+  try {
+    // eslint-disable-next-line no-undef
+    const store = await import('@netlify/blobs');
+    const b = store.getStore('joyfeed-cache');
+    await b.set(key, JSON.stringify(val), { contentType: 'application/json' });
+  } catch {}
+}
+
+// Build a cache key based on filters + mode
+function cacheKey({ q, cat, region, fast }) {
+  re
