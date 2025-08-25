@@ -21,20 +21,14 @@
   <link rel="preload" href="/styles.css" as="style" />
   <link rel="stylesheet" href="/styles.css" />
   <script defer src="/app.js"></script>
-
-  <!-- TODO: Insert your AdSense (or other ad network) script here
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=YOUR_CLIENT_ID" crossorigin="anonymous"></script>
-  -->
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
-
   <header class="wrap">
     <div class="brand">
       <img src="/assets/logo.svg" alt="" width="28" height="28" />
       <h1>JoyFeed News</h1>
     </div>
-
     <nav class="topnav">
       <a href="/" aria-current="page">Home</a>
       <a href="/about.html">About</a>
@@ -42,49 +36,40 @@
     </nav>
   </header>
 
-  <!-- Top banner ad slot (responsive) -->
-  <div class="wrap ad ad-banner" aria-label="Advertisement">
-    <!-- Replace this placeholder with your ad unit -->
-    <div class="ad-placeholder">Top banner ad</div>
-  </div>
-
-  <section class="wrap hero">
-    <h2>Happy news from around the world</h2>
-    <p class="muted">Curated automatically from positive RSS sources. No doom, no gloom.</p>
-    <div class="controls">
-      <input id="search" type="search" placeholder="Search stories… (e.g., wildlife, solar, teacher)" aria-label="Search stories" />
-      <select id="categorySel" aria-label="Filter by category">
-        <option value="">All categories</option>
-        <option>Community</option>
-        <option>Wildlife</option>
-        <option>Science</option>
-        <option>Climate</option>
-        <option>Humanity</option>
-        <option>Arts</option>
-      </select>
-      <button id="refreshBtn">Refresh</button>
-      <label class="auto">
-        Auto-refresh
-        <select id="intervalSel">
-          <option value="0">Off</option>
-          <option value="5">Every 5 min</option>
-          <option value="10" selected>Every 10 min</option>
-          <option value="30">Every 30 min</option>
+  <div class="wrap">
+    <section class="hero">
+      <h2>Happy news from around the world</h2>
+      <p class="muted">Curated automatically from positive RSS sources. No doom, no gloom.</p>
+      <div class="controls">
+        <input id="search" type="search" placeholder="Search stories… (e.g., wildlife, solar, teacher)" aria-label="Search stories" />
+        <select id="categorySel" aria-label="Filter by category">
+          <option value="">All categories</option>
+          <option>Community</option>
+          <option>Wildlife</option>
+          <option>Science</option>
+          <option>Climate</option>
+          <option>Humanity</option>
+          <option>Arts</option>
         </select>
-      </label>
-    </div>
-    <p id="statusLine" class="muted" role="status" aria-live="polite"></p>
-  </section>
+        <button id="refreshBtn">Refresh</button>
+        <label class="auto">
+          Auto-refresh
+          <select id="intervalSel">
+            <option value="0">Off</option>
+            <option value="5">Every 5 min</option>
+            <option value="10" selected>Every 10 min</option>
+            <option value="30">Every 30 min</option>
+          </select>
+        </label>
+      </div>
+      <p id="statusLine" class="muted" role="status" aria-live="polite"></p>
+    </section>
+  </div>
 
   <main id="main" class="wrap main-grid">
     <section class="content">
       <div id="chips" class="chips" aria-label="Quick filters"></div>
       <section id="grid" class="grid" aria-live="polite"></section>
-
-      <!-- Mid-feed ad -->
-      <div class="ad ad-mid" aria-label="Advertisement">
-        <div class="ad-placeholder">Mid-feed rectangle</div>
-      </div>
 
       <div class="center">
         <button id="loadMoreBtn" class="ghost">Load more</button>
@@ -92,11 +77,6 @@
     </section>
 
     <aside class="sidebar">
-      <!-- Sticky sidebar ad -->
-      <div class="ad ad-sticky" aria-label="Advertisement">
-        <div class="ad-placeholder">Sticky sidebar</div>
-      </div>
-
       <div class="card info">
         <h3>What is JoyFeed News?</h3>
         <p class="muted">A tiny sunshine machine that aggregates wholesome stories.</p>

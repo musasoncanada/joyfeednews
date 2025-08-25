@@ -47,10 +47,12 @@ function buildSchema(items) {
 }
 
 function card(item) {
-  const cats = item.categories?.map(c => `<span class="badge">${c}</span>`).join('') || '';
+  const cats = item.categories || [];
+  const catBadges = cats.map(c => `<span class="badge ${c}">${c}</span>`).join('');
   const img = item.image ? `<img class="thumb" alt="" loading="lazy" src="${item.image}">` : '';
+  const firstCat = cats[0] || '';
   return `
-    <article class="card">
+    <article class="card" data-cat="${firstCat}">
       ${img}
       <a href="${item.link}" target="_blank" rel="noopener">
         <h3>${item.title}</h3>
@@ -60,7 +62,7 @@ function card(item) {
           <span>•</span>
           <time datetime="${item.isoDate}">${timeAgo(item.isoDate)}</time>
         </div>
-        <div class="badges">${cats}</div>
+        <div class="badges">${catBadges}</div>
       </a>
       <div style="display:flex; gap:8px; padding: 0 16px 16px;">
         <button class="ghost" data-share="${encodeURIComponent(item.link)}" aria-label="Share">Share</button>
@@ -74,14 +76,13 @@ function render(reset=false) {
   if (reset) { shown = 0; grid.innerHTML = ''; }
   const slice = allItems.slice(shown, shown + pageSize);
   if (slice.length === 0 && shown === 0) {
-    grid.innerHTML = `<p class="muted">No stories match your filters.</p>`;
+    grid.innerHTML = `<div class="card" style="padding:20px"><h3>No stories yet in this category</h3><p class="muted">Try Refresh or pick another category — we’ll keep pulling new happy news throughout the day ✨</p></div>`;
   } else {
     grid.insertAdjacentHTML('beforeend', slice.map(card).join(''));
   }
   shown += slice.length;
   loadMoreBtn.style.display = shown < allItems.length ? 'inline-block' : 'none';
 
-  // JSON-LD for top results
   const schemaEl = document.getElementById('schema-json');
   if (schemaEl) schemaEl.textContent = JSON.stringify(buildSchema(allItems), null, 2);
 }
