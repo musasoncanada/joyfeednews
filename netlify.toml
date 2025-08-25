@@ -2,15 +2,20 @@
   publish = "."
   functions = "netlify/functions"
 
-[[headers]]
-  for = "/*"
-  [headers.values]
-  X-Frame-Options = "DENY"
-  X-Content-Type-Options = "nosniff"
-  Referrer-Policy = "strict-origin-when-cross-origin"
-  Permissions-Policy = "geolocation=(), microphone=(), camera=()"
-
 [[redirects]]
   from = "/api/news"
   to = "/.netlify/functions/happy-news"
   status = 200
+
+[[redirects]]
+  from = "/category/:cat"
+  to = "/index.html?category=:cat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[functions."warm-cache"]
+  schedule = "*/15 * * * *"
