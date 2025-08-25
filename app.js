@@ -1,1 +1,1 @@
-// Full app.js code with category filter fixes (see assistant message above)
+// app logic placeholder
