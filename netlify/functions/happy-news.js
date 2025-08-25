@@ -1,195 +1,204 @@
-// JoyFeed News frontend
-// Fetches from Netlify function and renders colorful cards
+// /.netlify/functions/happy-news
+// Reputable sources + Region filtering + positivity filter
+const Parser = require('rss-parser');
+const parser = new Parser({
+  timeout: 20000,
+  headers: { 'User-Agent': 'JoyFeedNewsBot/1.0 (+https://joyfeednews.com)' }
+});
 
-const API = '/.netlify/functions/happy-news';
+/**
+ * REGION FEEDS (expanded with extra reputable sources)
+ */
+const REGION_FEEDS = {
+  Canada: [
+    'https://www.cbc.ca/cmlink/rss-world',
+    'https://www.cbc.ca/cmlink/rss-health',
+    'https://globalnews.ca/feed/',
+    'https://www.ctvnews.ca/rss/ctvnews-ca-world-public-rss-1.822289',
+    'https://www.cbc.ca/cmlink/rss-canada',
+    'https://www.thestar.com/content/thestar/feed.RSSManagerServlet.news.canada.rss',
+    'https://www.nationalobserver.com/rss.xml'
+  ],
+  Africa: [
+    'https://www.bbc.co.uk/africa/index.xml',
+    'https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf',
+    'https://www.reutersagency.com/feed/?best-sectors=africa&post_type=best',
+    'https://feeds.bbci.co.uk/news/world/africa/rss.xml',
+    'https://www.theafricareport.com/feed/',
+    'https://www.dailymaverick.co.za/section/news/feed/'
+  ],
+  Asia: [
+    'https://feeds.bbci.co.uk/news/asia/rss.xml',
+    'https://www.reutersagency.com/feed/?best-sectors=asia&post_type=best',
+    'https://feeds.npr.org/1004/rss.xml',
+    'https://www.thehindu.com/news/national/feeder/default.rss',
+    'https://www.japantimes.co.jp/feed/',
+    'https://www.aljazeera.com/xml/rss/all.xml'
+  ],
+  'North America': [
+    'https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml',
+    'https://apnews.com/hub/north-america/rss',
+    'https://www.npr.org/rss/rss.php?id=1004',
+    'https://feeds.npr.org/1128/rss.xml',
+    'https://www.smithsonianmag.com/rss/latest_articles/',
+    'https://rss.nytimes.com/services/xml/rss/nyt/Science.xml'
+  ],
+  Europe: [
+    'https://feeds.bbci.co.uk/news/europe/rss.xml',
+    'https://www.reutersagency.com/feed/?best-sectors=europe&post_type=best',
+    'https://apnews.com/hub/europe/rss',
+    'https://www.euronews.com/rss?level=theme&name=news',
+    'https://rss.dw.com/rdf/rss-en-all',
+    'https://www.theguardian.com/world/rss'
+  ],
 
-const grid = document.getElementById('grid');
-const chips = document.getElementById('chips');
-const searchInput = document.getElementById('search');
-const categorySel = document.getElementById('categorySel');
-const regionSel = document.getElementById('regionSel');
-const refreshBtn = document.getElementById('refreshBtn');
-const intervalSel = document.getElementById('intervalSel');
-const loadMoreBtn = document.getElementById('loadMoreBtn');
-const statusLine = document.getElementById('statusLine');
-const themeBtn = document.getElementById('themeBtn');
+  // Always-on “positive-leaning” verticals
+  Common: [
+    'https://www.goodnewsnetwork.org/category/news/feed/',
+    'https://www.positive.news/feed/',
+    'https://www.optimistdaily.com/feed/',
+    'https://www.nationalgeographic.com/animals/feed/rss',
+    'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml',
+    'https://www.sciencedaily.com/rss/top/science.xml',
+    'https://www.reddit.com/r/UpliftingNews/.rss'
+  ]
+};
 
-let allItems = [];
-let shown = 0;
-const pageSize = 24;
-let timer = null;
-
-const QUICK_CHIPS = [
-  'Community','Wildlife','Science','Climate','Humanity',
-  'Arts','Scholarship','Rescue','Solar','Teacher'
+// --- Positivity filter, categories, dedupe, handler ---
+const POSITIVE_HINTS = [
+  'wholesome','heartwarming','uplifting','hope','kindness','donates','rescued',
+  'saved','breakthrough','cure','reunited','restored','revived','community',
+  'wildlife','conservation','clean energy','scholarship','celebrates','volunteer',
+  'inspiring','smile','teacher','students','neighborhood','fundraiser','award',
+  'grant','renewable','reforestation','rehabilitation','sanctuary','success'
+];
+const NEGATIVE_FLAGS = [
+  'dies','dead','death','fatal','shoot','war','conflict','assault','crime','lawsuit','suicide',
+  'murder','fraud','collapse','recession','covid','ebola','hiv','abuse','crash','explosion',
+  'bomb','kill','killed','hate','disaster','flood','wildfire','hostage','terror','stabbing',
+  'injured','arrested','charges','charged','indicted','sanction'
+];
+const CATEGORY_RULES = [
+  { name: 'Community',  words: ['community','neighbors','volunteer','teacher','students','school','donate','fundraiser','local','town','village'] },
+  { name: 'Wildlife',   words: ['wildlife','conservation','habitat','rescue','species','sanctuary','marine','turtle','whale','elephant','rhino','bird','rehabilitation'] },
+  { name: 'Science',    words: ['breakthrough','cancer','therapy','trial','vaccine','research','battery','fusion','quantum','prosthetic','gene'] },
+  { name: 'Climate',    words: ['solar','wind','geothermal','clean energy','emissions','recycling','reforestation','climate','renewable'] },
+  { name: 'Humanity',   words: ['heartwarming','kindness','uplifting','reunited','saved','rescued','hope','smile','hero','donates'] },
+  { name: 'Arts',       words: ['artist','art','music','orchestra','film','festival','museum','exhibit'] }
 ];
 
-function timeAgo(iso) {
-  const now = new Date();
-  const then = new Date(iso);
-  const s = Math.max(1, Math.floor((now - then) / 1000));
-  const units = [
-    ['year', 31536000], ['month', 2592000], ['week', 604800],
-    ['day', 86400], ['hour', 3600], ['minute', 60]
-  ];
-  for (const [name, secs] of units) {
-    const val = Math.floor(s / secs);
-    if (val >= 1) return `${val} ${name}${val>1?'s':''} ago`;
+let cache = { at: 0, data: null };
+const CACHE_MS = 10 * 60 * 1000;
+
+function stripHtml(s='') { return s.replace(/<[^>]+>/g,''); }
+function originFromLink(url='') { try { return new URL(url).hostname.replace(/^www\./,''); } catch { return ''; } }
+function host(u) { try { return new URL(u).hostname; } catch { return ''; } }
+function inferRegion(feedUrl) {
+  for (const [region, list] of Object.entries(REGION_FEEDS)) {
+    if (region === 'Common') continue;
+    if (list.some(u => feedUrl && host(feedUrl) === host(u))) return region;
   }
-  return 'just now';
+  return null;
 }
 
-function buildSchema(items) {
+function normalizeItem(item, feedTitle, feedUrl) {
+  const excerpt = stripHtml(item.contentSnippet || item.content || '').trim();
+  const image =
+    (item.enclosure && item.enclosure.url) ||
+    (item.media && item.media.content && item.media.content.url) || null;
   return {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "name": "JoyFeed News stories",
-    "itemListElement": items.slice(0, 20).map((it, i) => ({
-      "@type": "ListItem",
-      "position": i + 1,
-      "url": it.link,
-      "name": it.title
-    }))
+    id: (item.guid || item.link || item.title || '').slice(0,180),
+    title: item.title || '',
+    link: item.link || item.guid || '',
+    site: originFromLink(item.link),
+    sourceTitle: feedTitle || originFromLink(item.link),
+    isoDate: item.isoDate || item.pubDate || new Date().toISOString(),
+    excerpt: excerpt.slice(0, 300),
+    image,
+    region: inferRegion(feedUrl)
   };
 }
 
-function card(item) {
-  const cats = item.categories || [];
-  const regionBadge = item.region ? `<span class="badge Region">${item.region}</span>` : '';
-  const catBadges = cats.map(c => `<span class="badge ${c}">${c}</span>`).join('') + regionBadge;
-  const img = item.image ? `<img class="thumb" alt="" loading="lazy" src="${item.image}">` : '';
-  const firstCat = cats[0] || '';
-  return `
-    <article class="card" data-cat="${firstCat}">
-      ${img}
-      <a href="${item.link}" target="_blank" rel="noopener">
-        <h3>${item.title}</h3>
-        <p class="muted">${item.excerpt || ''}</p>
-        <div class="meta">
-          <span>${item.site || item.sourceTitle || 'Source'}</span>
-          <span>•</span>
-          <time datetime="${item.isoDate}">${timeAgo(item.isoDate)}</time>
-        </div>
-        <div class="badges">${catBadges}</div>
-      </a>
-      <div style="display:flex; gap:8px; padding: 0 16px 16px;">
-        <button class="ghost" data-share="${encodeURIComponent(item.link)}" aria-label="Share">Share</button>
-        <button class="ghost" data-copy="${encodeURIComponent(item.link)}" aria-label="Copy link">Copy link</button>
-      </div>
-    </article>
-  `;
+function isLikelyPositive(txt='') {
+  const t = txt.toLowerCase();
+  if (NEGATIVE_FLAGS.some(w => t.includes(w))) return false;
+  if (POSITIVE_HINTS.some(w => t.includes(w))) return true;
+  return /good news|feel[-\s]?good|heartwarming|inspir|uplift|kind|smile|adorable|celebrat|award/i.test(t);
+}
+function categorize(txt='') {
+  const t = txt.toLowerCase();
+  const cats = [];
+  for (const c of CATEGORY_RULES) if (c.words.some(w => t.includes(w))) cats.push(c.name);
+  if (!cats.length) cats.push('Good News');
+  return Array.from(new Set(cats)).slice(0, 3);
+}
+function dedupe(items) {
+  const seen = new Set(); const out = [];
+  for (const it of items) {
+    const key = (it.link || it.title).toLowerCase().replace(/[?#].*$/,'');
+    if (!seen.has(key)) { seen.add(key); out.push(it); }
+  } return out;
 }
 
-function render(reset=false) {
-  if (!grid) return;
-  if (reset) { shown = 0; grid.innerHTML = ''; }
-  const slice = allItems.slice(shown, shown + pageSize);
-  if (!slice.length && shown === 0) {
-    grid.innerHTML = `
-      <div class="card" style="padding:20px">
-        <h3>No stories yet</h3>
-        <p class="muted">Try Refresh — we’ll keep pulling new happy news throughout the day ✨</p>
-      </div>`;
-  } else {
-    grid.insertAdjacentHTML('beforeend', slice.map(card).join(''));
-  }
-  shown += slice.length;
-  loadMoreBtn.style.display = shown < allItems.length ? 'inline-block' : 'none';
-
-  const schemaEl = document.getElementById('schema-json');
-  if (schemaEl) schemaEl.textContent = JSON.stringify(buildSchema(allItems), null, 2);
-}
-
-async function load() {
+exports.handler = async (event) => {
   try {
-    refreshBtn.disabled = true; refreshBtn.textContent = 'Loading…';
-    statusLine.textContent = 'Fetching uplifting stories…';
+    const now = Date.now();
+    const params = new URLSearchParams(event.queryStringParameters || {});
+    const q = (params.get('q') || '').trim().toLowerCase();
+    const categoryFilter = (params.get('category') || '').trim().toLowerCase();
+    const regionFilter = (params.get('region') || '').trim().toLowerCase();
 
-    const params = new URLSearchParams();
-    const q = (searchInput?.value || '').trim();
-    const cat = categorySel?.value || '';
-    const region = regionSel?.value || '';
-    if (q) params.set('q', q);
-    if (cat) params.set('category', cat);
-    if (region) params.set('region', region);
+    const requestedRegionKey = Object.keys(REGION_FEEDS).find(r => r.toLowerCase() === regionFilter);
+    const FEEDS = requestedRegionKey
+      ? [...(REGION_FEEDS[requestedRegionKey] || []), ...REGION_FEEDS.Common]
+      : Object.values(REGION_FEEDS).flat();
 
-    const res = await fetch(`${API}?${params.toString()}`, { cache: 'no-store' });
-    const data = await res.json();
-    allItems = data.items || [];
-    render(true);
-
-    const updated = data.updatedAt ? timeAgo(data.updatedAt) : 'just now';
-    statusLine.textContent = `Updated ${updated} • ${allItems.length} stories`;
-  } catch (err) {
-    console.error(err);
-    statusLine.textContent = 'Could not load stories.';
-    grid.innerHTML = `<p class="muted">Something went wrong. Try Refresh.</p>`;
-  } finally {
-    refreshBtn.disabled = false; refreshBtn.textContent = 'Refresh';
-  }
-}
-
-function applyFilter() { render(true); load(); }
-
-// Event listeners
-refreshBtn?.addEventListener('click', load);
-searchInput?.addEventListener('change', applyFilter);
-categorySel?.addEventListener('change', applyFilter);
-regionSel?.addEventListener('change', applyFilter);
-loadMoreBtn?.addEventListener('click', () => render(false));
-
-// Quick filter chips
-if (chips) {
-  chips.innerHTML = QUICK_CHIPS.map(t => `<button class="ghost" data-chip="${t}">${t}</button>`).join('');
-  chips.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-chip]');
-    if (!btn) return;
-    categorySel.value = btn.dataset.chip;
-    applyFilter();
-  });
-}
-
-// Share / Copy actions (event delegation)
-grid?.addEventListener('click', async (e) => {
-  const shareBtn = e.target.closest('[data-share]');
-  const copyBtn = e.target.closest('[data-copy]');
-  if (shareBtn) {
-    const url = decodeURIComponent(shareBtn.dataset.share);
-    if (navigator.share) {
-      try { await navigator.share({ title: 'JoyFeed News', url }); } catch {}
-    } else {
-      await navigator.clipboard.writeText(url);
-      shareBtn.textContent = 'Copied!';
-      setTimeout(() => shareBtn.textContent = 'Share', 1200);
+    const canUseCache = !q && !categoryFilter && !regionFilter;
+    if (cache.data && (now - cache.at) < CACHE_MS && canUseCache) {
+      return json(cache.data, 200, true);
     }
+
+    const results = await Promise.allSettled(
+      FEEDS.map(async (url) => {
+        const feed = await parser.parseURL(url);
+        return (feed.items || [])
+          .map(i => normalizeItem(i, feed.title, url))
+          .map(i => ({ ...i, categories: categorize(`${i.title} ${i.excerpt}`) }))
+          .filter(i => isLikelyPositive(`${i.title} ${i.excerpt}`));
+      })
+    );
+
+    let items = dedupe(results.flatMap(r => r.status === 'fulfilled' ? r.value : []))
+      .sort((a,b) => new Date(b.isoDate) - new Date(a.isoDate));
+
+    if (q) {
+      const words = q.split(/\s+/);
+      items = items.filter(i => {
+        const blob = `${i.title} ${i.excerpt} ${i.site} ${i.sourceTitle} ${i.categories.join(' ')} ${i.region || ''}`.toLowerCase();
+        return words.every(w => blob.includes(w));
+      });
+    }
+    if (categoryFilter) items = items.filter(i => i.categories.some(c => c.toLowerCase() === categoryFilter));
+    if (regionFilter) items = items.filter(i => (i.region || '').toLowerCase() === regionFilter);
+
+    items = items.slice(0, 160);
+
+    const payload = { updatedAt: new Date().toISOString(), count: items.length, items };
+    if (canUseCache) cache = { at: now, data: payload };
+    return json(payload, 200, true);
+  } catch (err) {
+    return json({ error: 'Failed to fetch feeds', details: String(err) }, 500, false);
   }
-  if (copyBtn) {
-    const url = decodeURIComponent(copyBtn.dataset.copy);
-    await navigator.clipboard.writeText(url);
-    copyBtn.textContent = 'Copied!';
-    setTimeout(() => copyBtn.textContent = 'Copy link', 1200);
-  }
-});
+};
 
-// Theme toggle
-themeBtn?.addEventListener('click', () => {
-  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = next;
-  localStorage.setItem('theme', next);
-});
-document.documentElement.dataset.theme = localStorage.getItem('theme') || '';
-
-// Auto-refresh
-intervalSel?.addEventListener('change', () => {
-  if (timer) { clearInterval(timer); timer = null; }
-  const mins = parseInt(intervalSel.value, 10);
-  if (mins > 0) timer = setInterval(load, mins * 60 * 1000);
-});
-
-// SW (best-effort)
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+function json(body, status=200, cacheable=false) {
+  return {
+    statusCode: status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': cacheable ? 'public, max-age=300, stale-while-revalidate=120' : 'no-store'
+    },
+    body: JSON.stringify(body)
+  };
 }
-
-// Initial load
-load();
