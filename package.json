@@ -1,18 +1,13 @@
 {
   "name": "joyfeednews",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "private": true,
   "license": "MIT",
   "scripts": {
     "start": "netlify dev",
-    "build": "echo 'Static build ready'",
-    "format": "prettier -w ."
+    "build": "echo 'Static build ready'"
   },
   "dependencies": {
     "rss-parser": "^3.13.0"
-  },
-  "devDependencies": {
-    "prettier": "^3.3.3",
-    "netlify-cli": "^17.33.6"
   }
 }
