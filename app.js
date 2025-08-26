@@ -1,4 +1,4 @@
-// JoyFeed News — colored build, regions, reader, URL-sync, refined positivity search via server
+// JoyFeed News — direct open (no iframe), with quick preview modal
 const API = '/.netlify/functions/happy-news';
 
 const grid = document.getElementById('grid');
@@ -40,14 +40,16 @@ function buildSchema(items) {
     }))
   };
 }
-
-function safeReaderUrl(url) {
+function withUTM(url) {
   try {
     const u = new URL(url);
-    if (!/^https?:$/.test(u.protocol)) return '#';
-    const qp = new URLSearchParams({ url: u.toString() });
-    return `/reader.html?${qp.toString()}`;
-  } catch { return '#'; }
+    if (!/^https?:$/.test(u.protocol)) return url;
+    if (!u.searchParams.has('utm_source')) {
+      u.searchParams.set('utm_source','joyfeednews');
+      u.searchParams.set('utm_medium','referral');
+    }
+    return u.toString();
+  } catch { return url; }
 }
 
 function card(item) {
@@ -56,11 +58,11 @@ function card(item) {
   const catBadges = cats.map(c => `<span class="badge ${c}">${c}</span>`).join('') + regionBadge;
   const img = item.image ? `<img class="thumb" alt="" loading="lazy" src="${item.image}">` : '';
   const firstCat = cats[0] || '';
-  const readerHref = safeReaderUrl(item.link);
+  const href = withUTM(item.link);
   return `
     <article class="card" data-cat="${firstCat}">
-      ${img}
-      <a href="${readerHref}">
+      <a class="open" href="${href}" target="_blank" rel="noopener noreferrer">
+        ${img}
         <h3>${item.title}</h3>
         <p class="muted">${item.excerpt || ''}</p>
         <div class="meta">
@@ -70,6 +72,10 @@ function card(item) {
         </div>
         <div class="badges">${catBadges}</div>
       </a>
+      <div class="card-actions">
+        <button class="ghost preview-btn" data-id="${item.id}">Preview</button>
+        <a class="ghost" href="${href}" target="_blank" rel="noopener noreferrer">Open ↗</a>
+      </div>
     </article>
   `;
 }
@@ -148,6 +154,46 @@ if (chips) {
   chips.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-chip]'); if (!btn) return;
     categorySel.value = btn.dataset.chip; applyFilter();
+  });
+}
+
+// Quick preview modal
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.preview-btn');
+  if (!b) return;
+  const id = b.dataset.id;
+  const it = allItems.find(x => x.id === id);
+  if (!it) return;
+  e.preventDefault();
+  openPreview(it);
+});
+
+function openPreview(it) {
+  const existing = document.getElementById('preview');
+  if (existing) existing.remove();
+  const m = document.createElement('div');
+  m.id = 'preview';
+  m.innerHTML = `
+    <div class="modal-backdrop"></div>
+    <div class="modal">
+      <button class="close">&times;</button>
+      <div class="modal-body">
+        ${it.image ? `<img src="${it.image}" alt="" style="width:100%;max-height:260px;object-fit:cover;border-radius:12px">` : ''}
+        <h3 style="margin:12px 0 6px">${it.title}</h3>
+        <p class="muted">${it.excerpt || ''}</p>
+        <div class="meta" style="margin-top:10px">
+          <span>${it.site || it.sourceTitle || 'Source'}</span>
+          <span>•</span>
+          <time datetime="${it.isoDate}">${timeAgo(it.isoDate)}</time>
+        </div>
+        <div style="margin-top:14px">
+          <a class="ghost" href="${withUTM(it.link)}" target="_blank" rel="noopener noreferrer">Read on source ↗</a>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', (e) => {
+    if (e.target.classList.contains('close') || e.target.classList.contains('modal-backdrop')) m.remove();
   });
 }
 

@@ -1,0 +1,6 @@
+
+/* Modal preview */
+#preview{position:fixed;inset:0;z-index:9999}
+#preview .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px)}
+#preview .modal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,92vw);background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 25px 60px rgba(0,0,0,.4);padding:14px}
+#preview .close{position:absolute;right:12px;top:8px;font-size:24px;background:transparent;border:0;color:inherit;cursor:pointer}
