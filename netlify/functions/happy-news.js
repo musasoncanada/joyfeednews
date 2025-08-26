@@ -106,18 +106,44 @@ function dedupe(items) {
   } return out;
 }
 function normalizeItem(item, feedTitle, feedUrl) {
-  const excerpt = stripHtml(item.contentSnippet || item.content || '').trim();
+  // Prefer full text if feed provides it
+  let text =
+    item['content:encoded'] ||
+    item.content ||
+    item.summary ||
+    item.description ||
+    item.contentSnippet ||
+    '';
+
+  // Strip HTML tags and collapse whitespace
+  text = String(text)
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Limit to ~500–650 chars (≈ 2 paragraphs), cut at sentence end if possible
+  const HARD_LIMIT = 650;
+  if (text.length > HARD_LIMIT) {
+    let cut = 500;
+    const window = text.slice(500, HARD_LIMIT);
+    const dot = window.search(/[.!?](\s|$)/);
+    if (dot !== -1) cut = 500 + dot + 1;
+    text = text.slice(0, cut).trim() + '…';
+  }
+
   const image =
     (item.enclosure && item.enclosure.url) ||
-    (item.media && item.media.content && item.media.content.url) || null;
+    (item.media && item.media.content && item.media.content.url) ||
+    null;
+
   return {
-    id: (item.guid || item.link || item.title || '').slice(0,180),
+    id: (item.guid || item.link || item.title || '').slice(0, 180),
     title: item.title || '',
     link: item.link || item.guid || '',
     site: originFromLink(item.link),
     sourceTitle: feedTitle || originFromLink(item.link),
     isoDate: item.isoDate || item.pubDate || new Date().toISOString(),
-    excerpt: excerpt.slice(0, 300),
+    excerpt: text,
     image,
     region: inferRegion(feedUrl)
   };
