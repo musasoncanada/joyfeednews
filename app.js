@@ -1,4 +1,4 @@
-// JoyFeed News — direct open (no iframe), with quick preview modal
+// JoyFeed News — Direct open (no iframe reader)
 const API = '/.netlify/functions/happy-news';
 
 const grid = document.getElementById('grid');
@@ -40,6 +40,7 @@ function buildSchema(items) {
     }))
   };
 }
+
 function withUTM(url) {
   try {
     const u = new URL(url);
@@ -157,7 +158,7 @@ if (chips) {
   });
 }
 
-// Quick preview modal
+// Preview modal
 document.addEventListener('click', (e) => {
   const b = e.target.closest('.preview-btn');
   if (!b) return;
