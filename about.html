@@ -1,1 +1,52 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><title>About — JoyFeed News</title><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="description" content="About JoyFeed News — positive news via reputable RSS sources."/><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/assets/logo.svg" type="image/svg+xml"/><link rel="stylesheet" href="/styles.css"/></head><body><a class="skip" href="#main">Skip to content</a><header class="wrap"><div class="brand"><img src="/assets/logo.svg" alt="" width="28" height="28"/><h1>JoyFeed News</h1></div><nav class="topnav"><a href="/">Home</a><a href="/about.html" aria-current="page">About</a><button id="themeBtn" class="ghost" aria-label="Toggle theme">🌓</button></nav></header><main id="main" class="wrap prose"><h2>About JoyFeed News</h2><p><strong>JoyFeed News</strong> curates uplifting stories from reputable sources worldwide, including BBC, Reuters, NPR, AP, and more.</p><p>We filter out heavy topics and highlight good news — kindness, science breakthroughs, conservation, clean energy, and more.</p><p>Filter by category (Community, Science, Arts, Climate, Humanity, Wildlife…) or by region (Canada, Africa, Asia, North America, Europe).</p><p>Our mission is simple: fight doomscrolling with good news 🌍✨.</p></main><footer class="wrap footer"><div>Made with ☀️ for the world.</div></footer><script>document.getElementById('themeBtn')?.addEventListener('click',()=>{const n=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=n;localStorage.setItem('theme',n)});document.documentElement.dataset.theme=localStorage.getItem('theme')||'';</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>About — JoyFeed News</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="About JoyFeed News — positive news via RSS." />
+  <link rel="canonical" href="/about.html" />
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="wrap">
+    <div class="brand">
+      <img src="/assets/logo.svg" alt="" width="28" height="28" />
+      <h1>JoyFeed News</h1>
+    </div>
+    <nav class="topnav">
+      <a href="/">Home</a>
+      <a href="/about.html" aria-current="page">About</a>
+      <button id="themeBtn" class="ghost" aria-label="Toggle theme">🌓</button>
+    </nav>
+  </header>
+
+  <main id="main" class="wrap prose">
+    <h2>About JoyFeed News</h2>
+    <p>JoyFeed News is a tiny website that aggregates wholesome, uplifting stories from trusted RSS sources. We do lightweight keyword filtering to avoid heavy topics and bubble up the feel-good stuff.</p>
+    <h3>How it works</h3>
+    <ol>
+      <li>Fetch feeds via a serverless function.</li>
+      <li>Filter & categorize in code (transparent and tweakable).</li>
+      <li>Show recent stories on a fast, accessible front end.</li>
+    </ol>
+    <p>Want to suggest a source? <a href="mailto:hello@joyfeednews.com?subject=JoyFeed%20Feed%20Suggestion">Email us</a>.</p>
+  </main>
+
+  <footer class="wrap footer">
+    <div>Made with ☀️</div>
+  </footer>
+
+  <script>
+    document.getElementById('themeBtn')?.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('theme', next);
+    });
+    document.documentElement.dataset.theme = localStorage.getItem('theme') || '';
+  </script>
+</body>
+</html>

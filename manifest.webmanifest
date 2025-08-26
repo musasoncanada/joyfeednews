@@ -1,1 +1,16 @@
-{"name": "JoyFeed News", "short_name": "JoyFeed", "start_url": "/", "display": "standalone", "background_color": "#f8fafc", "theme_color": "#10b981", "icons": [{"src": "/assets/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]}
+{
+  "name": "JoyFeed News",
+  "short_name": "JoyFeed",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/assets/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
