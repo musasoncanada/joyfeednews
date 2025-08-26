@@ -2,4 +2,9 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>/</loc></url>
   <url><loc>/about.html</loc></url>
+  <url><loc>/region/Canada</loc></url>
+  <url><loc>/region/Africa</loc></url>
+  <url><loc>/region/Asia</loc></url>
+  <url><loc>/region/North%20America</loc></url>
+  <url><loc>/region/Europe</loc></url>
 </urlset>

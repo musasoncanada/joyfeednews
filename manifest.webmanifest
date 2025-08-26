@@ -3,7 +3,7 @@
   "short_name": "JoyFeed",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
+  "background_color": "#0b1220",
   "theme_color": "#10b981",
   "icons": [
     {

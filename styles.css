@@ -1,104 +1,36 @@
-:root {
-  --bg: #f8fafc;
-  --fg: #0f172a;
-  --muted: #475569;
-  --card: #ffffff;
-  --border: #e2e8f0;
-  --accent: #10b981;
-  --radius: 14px;
-  --wrap: 1140px;
+:root{
+  --bg:#0b1220; --fg:#e5e7eb; --muted:#9aa5b1; --card:#111827; --border:#1f2937; --accent:#34d399; --wrap:1180px; --radius:16px
 }
-:root[data-theme="dark"] {
-  --bg: #0b1220;
-  --fg: #e5e7eb;
-  --muted: #9aa5b1;
-  --card: #111827;
-  --border: #1f2937;
-  --accent: #34d399;
-}
-
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-body {
-  margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: var(--bg); color: var(--fg);
-  text-rendering: optimizeLegibility;
-}
-a { color: var(--fg); }
-.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 16px; }
-
-.skip { position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
-.skip:focus { left: 16px; top: 16px; width:auto; height:auto; background: var(--card); border: 2px solid var(--accent); border-radius: 8px; padding: 8px 12px; }
-
-header {
-  display:flex; align-items:center; justify-content:space-between;
-  padding: 18px 0; border-bottom: 1px solid var(--border); backdrop-filter: blur(8px);
-}
-.brand { display:flex; align-items:center; gap:10px; }
-.brand h1 { font-size: 1.15rem; margin: 0; }
-.topnav { display:flex; align-items:center; gap: 16px; }
-.topnav a { text-decoration:none; padding:8px 10px; border-radius: 10px; }
-.topnav a[aria-current="page"] { background: var(--card); border: 1px solid var(--border); }
-
-/* Colorful hero */
-.hero {
-  background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
-  border-radius: 18px;
-  padding: 36px 20px;
-  color: #fff;
-}
-:root[data-theme="dark"] .hero {
-  background: linear-gradient(135deg, #111827 0%, #0b1220 100%);
-  outline: 1px solid var(--border);
-}
-.hero h2, .hero p { color: #fff; }
-
-.controls { margin: 16px 0; display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-.controls input, .controls select, .controls button {
-  padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); color: var(--fg);
-}
-.controls .auto { display:flex; gap:8px; align-items:center; }
-.ghost { background: transparent; border: 1px solid var(--border); }
-
-/* Layout with sidebar */
-.main-grid { display:grid; grid-template-columns: 1fr minmax(260px, 300px); gap:18px; }
-@media (max-width: 980px) { .main-grid { grid-template-columns: 1fr; } .sidebar { order: -1; } }
-
-.grid { display:grid; gap:16px; margin:18px 0 28px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
-.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-  transition: transform .06s ease, box-shadow .2s ease; overflow:hidden; display:flex; flex-direction:column; }
-.card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.07); }
-.card a { text-decoration:none; color: inherit; display:block; padding: 16px; }
-.card img.thumb { width: 100%; height: 180px; object-fit: cover; display:block; }
-.card h3 { margin: 10px 0 8px; font-size: 1.05rem; }
-.meta { display:flex; gap:8px; align-items:center; color: var(--muted); font-size:.9rem; }
-.badges { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
-.badge { font-size:.8rem; padding:4px 8px; border-radius:999px; border:1px solid transparent; }
-
-/* Category badge colors */
-.badge.Community  { background:#3b82f6; color:#fff; }
-.badge.Wildlife   { background:#22c55e; color:#fff; }
-.badge.Science    { background:#8b5cf6; color:#fff; }
-.badge.Climate    { background:#f97316; color:#fff; }
-.badge.Humanity   { background:#ec4899; color:#fff; }
-.badge.Arts       { background:#facc15; color:#111; }
-.badge.Scholarship{ background:#fde047; color:#111; }
-.badge.Rescue     { background:#06b6d4; color:#fff; }
-.badge.Solar      { background:#fbbf24; color:#111; }
-.badge.Teacher    { background:#a16207; color:#fff; }
-
-/* Card accent by data-category */
-.card[data-cat="Community"]  { border-color: rgba(59,130,246,.35); box-shadow: 0 1px 0 rgba(59,130,246,.08); }
-.card[data-cat="Wildlife"]   { border-color: rgba(34,197,94,.35);  box-shadow: 0 1px 0 rgba(34,197,94,.08); }
-.card[data-cat="Science"]    { border-color: rgba(139,92,246,.35); box-shadow: 0 1px 0 rgba(139,92,246,.08); }
-.card[data-cat="Climate"]    { border-color: rgba(249,115,22,.35); box-shadow: 0 1px 0 rgba(249,115,22,.08); }
-.card[data-cat="Humanity"]   { border-color: rgba(236,72,153,.35); box-shadow: 0 1px 0 rgba(236,72,153,.08); }
-.card[data-cat="Arts"]       { border-color: rgba(250,204,21,.55); box-shadow: 0 1px 0 rgba(250,204,21,.12); }
-.card[data-cat="Scholarship"]{ border-color: rgba(253,224,71,.55); box-shadow: 0 1px 0 rgba(253,224,71,.12); }
-.card[data-cat="Rescue"]     { border-color: rgba(6,182,212,.35);  box-shadow: 0 1px 0 rgba(6,182,212,.08); }
-.card[data-cat="Solar"]      { border-color: rgba(251,191,36,.55); box-shadow: 0 1px 0 rgba(251,191,36,.12); }
-.card[data-cat="Teacher"]    { border-color: rgba(161,98,7,.35);   box-shadow: 0 1px 0 rgba(161,98,7,.08); }
-
-.footer { padding: 24px 0 40px; border-top: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
-.center { text-align:center; margin-bottom: 40px; }
-.prose { padding: 24px 0 60px; }
+:root[data-theme="light"]{ --bg:#f7fafc; --fg:#0f172a; --muted:#475569; --card:#ffffff; --border:#e2e8f0; --accent:#10b981 }
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--fg)}
+a{color:inherit} .wrap{max-width:var(--wrap);margin:0 auto;padding:0 18px}
+.skip{position:absolute;left:-10000px}.skip:focus{left:16px;top:12px;background:var(--card);border:2px solid var(--accent);border-radius:10px;padding:6px 10px}
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border);position:sticky;top:0;background:color-mix(in hsl,var(--bg) 90%,transparent);backdrop-filter: blur(6px);z-index:10}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-size:1.2rem}
+.nav{display:flex;align-items:center;gap:14px}
+.nav a{padding:8px 10px;border-radius:10px;text-decoration:none}
+.nav a[aria-current="page"]{background:var(--card);border:1px solid var(--border)}
+.menu{position:relative}.menu-btn{background:transparent;border:1px solid var(--border);border-radius:10px;padding:8px 10px;color:inherit}.menu-pop{display:none;position:absolute;top:38px;left:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:180px}.menu:hover .menu-pop{display:flex;flex-direction:column}.menu-pop a{padding:8px;border-radius:10px;text-decoration:none}.menu-pop a:hover{background:color-mix(in hsl,var(--card) 90%,transparent)}
+.hero{margin:22px 0;background:linear-gradient(135deg,#10b981,#3b82f6);padding:28px 20px;border-radius:20px;color:#001b1a}
+:root[data-theme="light"] .hero{color:#052e2b}
+.controls{margin:14px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.controls input,.controls select,.controls button{padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:inherit}
+.ghost{background:transparent;border:1px solid var(--border)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.main-grid{display:grid;grid-template-columns:1fr minmax(260px,300px);gap:18px}
+@media (max-width:1000px){.main-grid{grid-template-columns:1fr}.sidebar{order:-1}}
+.grid{display:grid;gap:16px;margin:18px 0 30px;grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:transform .06s ease,box-shadow .2s ease}
+.card:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.18)}
+.card a{text-decoration:none;color:inherit;display:block;padding:14px}
+.card img.thumb{width:100%;height:184px;object-fit:cover;display:block}
+.card h3{margin:8px 0 6px;font-size:1.05rem}
+.meta{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:.9rem}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.badge{font-size:.8rem;padding:4px 8px;border-radius:999px;border:1px solid transparent}
+.badge.Community{background:#3b82f6;color:#fff}.badge.Wildlife{background:#22c55e;color:#fff}.badge.Science{background:#8b5cf6;color:#fff}.badge.Climate{background:#f97316;color:#fff}.badge.Humanity{background:#ec4899;color:#fff}.badge.Arts{background:#facc15;color:#111}
+.badge.Region{background:#0ea5e9;color:#fff}
+.card[data-cat="Community"]{border-color:rgba(59,130,246,.35)}.card[data-cat="Wildlife"]{border-color:rgba(34,197,94,.35)}.card[data-cat="Science"]{border-color:rgba(139,92,246,.35)}.card[data-cat="Climate"]{border-color:rgba(249,115,22,.35)}.card[data-cat="Humanity"]{border-color:rgba(236,72,153,.35)}.card[data-cat="Arts"]{border-color:rgba(250,204,21,.55)}
+.footer{padding:24px 0 48px;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.center{text-align:center}
+.prose{padding:26px 0 60px;line-height:1.55}

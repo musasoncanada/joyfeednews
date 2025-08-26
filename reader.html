@@ -5,20 +5,46 @@
   <title>Reader — JoyFeed News</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <style>
+    body, html { height: 100%; }
+    .bar { position: sticky; top: 0; z-index: 20; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; background: var(--card); border-bottom: 1px solid var(--border); }
+    .bar .brand { display:flex; align-items:center; gap:10px; }
+    .bar .actions { display:flex; gap:8px; align-items:center; }
+    iframe.viewer { width: 100%; height: calc(100vh - 56px); border: 0; display:block; background: #fff; }
+    .btn { padding: 8px 12px; border-radius: 10px; border:1px solid var(--border); background: var(--card); text-decoration:none; color:inherit; }
+    .muted { color: var(--muted); font-size: .95rem; margin: 8px 16px; }
+  </style>
 </head>
 <body>
   <div class="bar">
-    <a href="/">← Back</a>
-    <a id="openOriginal" target="_blank">Open original ↗</a>
+    <div class="brand">
+      <a href="/" class="btn">← Home</a>
+      <img src="/assets/logo.svg" alt="" width="22" height="22" />
+      <strong>JoyFeed Reader</strong>
+    </div>
+    <div class="actions">
+      <a id="openOriginal" class="btn" target="_blank" rel="noopener">Open original ↗</a>
+      <button id="themeBtn" class="btn" aria-label="Toggle theme">🌓</button>
+    </div>
   </div>
-  <iframe id="viewer" style="width:100%;height:90vh;border:0;"></iframe>
+  <p class="muted">If this page doesn’t display in the frame, the publisher blocks embedding — use “Open original ↗”.</p>
+  <iframe id="viewer" class="viewer" sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+
   <script>
+    document.getElementById('themeBtn')?.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'light' ? '' : 'light';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('theme', next);
+    });
+    document.documentElement.dataset.theme = localStorage.getItem('theme') || '';
+
     const p = new URLSearchParams(location.search);
-    const raw = p.get('url')||'';
+    const raw = p.get('url') || '';
     let safe = '#';
-    try { const u = new URL(raw); if(/^https?:$/.test(u.protocol)) safe = u.toString(); } catch{}
+    try { const u = new URL(raw); if(/^https?:$/.test(u.protocol)) safe = u.toString(); } catch {}
     document.getElementById('openOriginal').href = safe;
-    document.getElementById('viewer').src = safe;
+    if (safe !== '#') document.getElementById('viewer').src = safe;
   </script>
 </body>
 </html>

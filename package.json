@@ -1,6 +1,11 @@
 {
   "name": "joyfeednews",
+  "version": "1.2.0",
   "private": true,
-  "dependencies": { "rss-parser": "^3.13.0" },
-  "engines": { "node": ">=18" }
+  "dependencies": {
+    "rss-parser": "^3.13.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }

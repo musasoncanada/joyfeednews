@@ -10,13 +10,13 @@
   external_node_modules = ["rss-parser"]
 
 [[redirects]]
-  from = "/api/news"
-  to = "/.netlify/functions/happy-news"
+  from = "/category/:cat"
+  to = "/index.html?category=:cat"
   status = 200
 
 [[redirects]]
-  from = "/category/:cat"
-  to = "/index.html?category=:cat"
+  from = "/region/:reg"
+  to = "/index.html?region=:reg"
   status = 200
 
 [[redirects]]
