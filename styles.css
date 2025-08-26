@@ -2,15 +2,23 @@
   --bg:#0b1220; --fg:#e5e7eb; --muted:#9aa5b1; --card:#111827; --border:#1f2937; --accent:#34d399; --wrap:1180px; --radius:16px
 }
 :root[data-theme="light"]{ --bg:#f7fafc; --fg:#0f172a; --muted:#475569; --card:#ffffff; --border:#e2e8f0; --accent:#10b981 }
-*{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--fg)}
-a{color:inherit} .wrap{max-width:var(--wrap);margin:0 auto;padding:0 18px}
-.skip{position:absolute;left:-10000px}.skip:focus{left:16px;top:12px;background:var(--card);border:2px solid var(--accent);border-radius:10px;padding:6px 10px}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--fg)}
+a{color:inherit}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 18px}
+.skip{position:absolute;left:-10000px}
+.skip:focus{left:16px;top:12px;background:var(--card);border:2px solid var(--accent);border-radius:10px;padding:6px 10px}
 .hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border);position:sticky;top:0;background:color-mix(in hsl,var(--bg) 90%,transparent);backdrop-filter: blur(6px);z-index:10}
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-size:1.2rem}
 .nav{display:flex;align-items:center;gap:14px}
 .nav a{padding:8px 10px;border-radius:10px;text-decoration:none}
 .nav a[aria-current="page"]{background:var(--card);border:1px solid var(--border)}
-.menu{position:relative}.menu-btn{background:transparent;border:1px solid var(--border);border-radius:10px;padding:8px 10px;color:inherit}.menu-pop{display:none;position:absolute;top:38px;left:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:180px}.menu:hover .menu-pop{display:flex;flex-direction:column}.menu-pop a{padding:8px;border-radius:10px;text-decoration:none}.menu-pop a:hover{background:color-mix(in hsl,var(--card) 90%,transparent)}
+.menu{position:relative}
+.menu-btn{background:transparent;border:1px solid var(--border);border-radius:10px;padding:8px 10px;color:inherit}
+.menu-pop{display:none;position:absolute;top:38px;left:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:180px}
+.menu:hover .menu-pop{display:flex;flex-direction:column}
+.menu-pop a{padding:8px;border-radius:10px;text-decoration:none}
+.menu-pop a:hover{background:color-mix(in hsl,var(--card) 90%,transparent)}
 .hero{margin:22px 0;background:linear-gradient(135deg,#10b981,#3b82f6);padding:28px 20px;border-radius:20px;color:#001b1a}
 :root[data-theme="light"] .hero{color:#052e2b}
 .controls{margin:14px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
@@ -28,9 +36,25 @@ a{color:inherit} .wrap{max-width:var(--wrap);margin:0 auto;padding:0 18px}
 .meta{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:.9rem}
 .badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .badge{font-size:.8rem;padding:4px 8px;border-radius:999px;border:1px solid transparent}
-.badge.Community{background:#3b82f6;color:#fff}.badge.Wildlife{background:#22c55e;color:#fff}.badge.Science{background:#8b5cf6;color:#fff}.badge.Climate{background:#f97316;color:#fff}.badge.Humanity{background:#ec4899;color:#fff}.badge.Arts{background:#facc15;color:#111}
+.badge.Community{background:#3b82f6;color:#fff}
+.badge.Wildlife{background:#22c55e;color:#fff}
+.badge.Science{background:#8b5cf6;color:#fff}
+.badge.Climate{background:#f97316;color:#fff}
+.badge.Humanity{background:#ec4899;color:#fff}
+.badge.Arts{background:#facc15;color:#111}
 .badge.Region{background:#0ea5e9;color:#fff}
-.card[data-cat="Community"]{border-color:rgba(59,130,246,.35)}.card[data-cat="Wildlife"]{border-color:rgba(34,197,94,.35)}.card[data-cat="Science"]{border-color:rgba(139,92,246,.35)}.card[data-cat="Climate"]{border-color:rgba(249,115,22,.35)}.card[data-cat="Humanity"]{border-color:rgba(236,72,153,.35)}.card[data-cat="Arts"]{border-color:rgba(250,204,21,.55)}
+.card[data-cat="Community"]{border-color:rgba(59,130,246,.35)}
+.card[data-cat="Wildlife"]{border-color:rgba(34,197,94,.35)}
+.card[data-cat="Science"]{border-color:rgba(139,92,246,.35)}
+.card[data-cat="Climate"]{border-color:rgba(249,115,22,.35)}
+.card[data-cat="Humanity"]{border-color:rgba(236,72,153,.35)}
+.card[data-cat="Arts"]{border-color:rgba(250,204,21,.55)}
 .footer{padding:24px 0 48px;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .center{text-align:center}
 .prose{padding:26px 0 60px;line-height:1.55}
+
+/* Modal preview */
+#preview{position:fixed;inset:0;z-index:9999}
+#preview .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px)}
+#preview .modal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,92vw);background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 25px 60px rgba(0,0,0,.4);padding:14px}
+#preview .close{position:absolute;right:12px;top:8px;font-size:24px;background:transparent;border:0;color:inherit;cursor:pointer}
