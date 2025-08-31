@@ -1,11 +1,33 @@
-JoyFeed — Direct Open (iframe removed)
------------------------------------------
-This update removes the reader iframe and opens all stories directly on the source site in a new tab.
-It also keeps the Preview modal for a quick read.
+Monetization Starter for JoyFeed News
+======================================
 
-Install:
-1) Replace your existing `app.js` with this one.
-2) (Optional) Delete `reader.html` from the repo.
-3) Commit & push — Netlify will redeploy.
+This adds:
+- AdSense slots (top banner, in-feed, sidebar) + lazy init (ads.js)
+- Newsletter signup box (replace form action with your provider URL)
+- Privacy page & ads.txt placeholder
 
-No changes needed to netlify.toml.
+Setup
+-----
+1) **AdSense**
+   - Apply / sign in at https://www.google.com/adsense
+   - In `index.html`, replace all occurrences of:
+       ca-pub-YOUR_ADSENSE_PUBLISHER_ID
+     with your real Publisher ID.
+   - Replace slot IDs: TOP_BANNER_SLOT_ID, INFEED_SLOT_ID, SIDEBAR_SLOT_ID with your ad unit slot IDs.
+   - Upload `ads.txt` at the site root (Netlify will serve it).
+
+2) **Newsletter**
+   - Replace `YOUR_EMAIL_PROVIDER_FORM_URL` in `index.html` with your Mailchimp/ConvertKit POST URL.
+
+3) **Styles**
+   - Append the contents of `styles-additions.css` to your existing `styles.css` (or merge manually).
+
+4) **Hook for reloading ads**
+   - `ads.js` exposes `window.refreshAds()`. If you paginate or inject cards dynamically in `app.js`,
+     call `window.refreshAds()` after rendering to nudge AdSense to fill in new slots.
+
+5) **Privacy**
+   - Add a link to `/privacy.html` in your nav or footer (already in the provided `index.html`).
+
+6) **Deploy**
+   - Commit files to your repo; Netlify redeploys automatically.

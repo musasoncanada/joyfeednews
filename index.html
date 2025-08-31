@@ -1,73 +1,142 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>JoyFeed News — Happy news from around the world</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/styles.css">
-  <!-- AdSense + ads.js -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Curated uplifting stories from reputable sources. Zero doomscrolling — just smiles." />
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#10b981" />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script defer src="/app.js"></script>
+  <script defer src="/ads.js"></script>
+  <!-- Replace YOUR_ADSENSE_PUBLISHER_ID below after approval -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
           data-ad-client="ca-pub-YOUR_ADSENSE_PUBLISHER_ID"></script>
-  <script defer src="/ads.js"></script>
 </head>
 <body>
-  <header class="hdr wrap">
-    <a href="/" class="brand">JoyFeed <strong>News</strong></a>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="wrap hdr">
+    <a class="brand" href="/" aria-label="JoyFeed Home">
+      <img src="/assets/logo.svg" width="28" height="28" alt=""/>
+      <span>JoyFeed <strong>News</strong></span>
+    </a>
+    <nav class="nav">
+      <a href="/" aria-current="page">Home</a>
+      <div class="menu">
+        <button class="menu-btn">Regions ▾</button>
+        <div class="menu-pop">
+          <a href="/region/Canada">Canada</a>
+          <a href="/region/Africa">Africa</a>
+          <a href="/region/Asia">Asia</a>
+          <a href="/region/North%20America">North America</a>
+          <a href="/region/Europe">Europe</a>
+        </div>
+      </div>
+      <a href="/about.html">About</a>
+      <a href="/privacy.html">Privacy</a>
+      <button id="themeBtn" class="ghost" aria-label="Toggle theme">🌓</button>
+    </nav>
   </header>
 
-  <main class="wrap">
-    <section class="hero">
-      <h1>Good News Only</h1>
-      <p>Curated uplifting stories from across the globe.</p>
-    </section>
-
-    <!-- Top Banner Ad -->
+  <div class="wrap">
+    <!-- Top banner ad -->
     <div class="ad ad-top">
-      <ins class="adsbygoogle" style="display:block"
+      <ins class="adsbygoogle"
+           style="display:block"
            data-ad-client="ca-pub-YOUR_ADSENSE_PUBLISHER_ID"
            data-ad-slot="TOP_BANNER_SLOT_ID"
            data-ad-format="auto"
            data-full-width-responsive="true"></ins>
     </div>
 
-    <div class="main-grid">
-      <section id="grid" class="grid"></section>
+    <section class="hero">
+      <h1>Happy news, globally</h1>
+      <p class="muted">Sourced from trusted publishers (BBC, AP, Reuters, NPR, etc.) and filtered to highlight good things only.</p>
+      <div class="controls">
+        <input id="search" type="search" placeholder="Search happy stories… (wildlife, solar, teacher…)" aria-label="Search stories" />
+        <select id="categorySel" aria-label="Filter by category">
+          <option value="">All categories</option>
+          <option>Community</option>
+          <option>Wildlife</option>
+          <option>Science</option>
+          <option>Climate</option>
+          <option>Humanity</option>
+          <option>Arts</option>
+        </select>
+        <select id="regionSel" aria-label="Filter by region">
+          <option value="">All regions</option>
+          <option>Canada</option>
+          <option>Africa</option>
+          <option>Asia</option>
+          <option>North America</option>
+          <option>Europe</option>
+        </select>
+        <button id="refreshBtn">Refresh</button>
+        <label class="auto">Auto-refresh
+          <select id="intervalSel">
+            <option value="0" selected>Off</option>
+            <option value="10">Every 10 min</option>
+            <option value="30">Every 30 min</option>
+          </select>
+        </label>
+      </div>
+      <p id="statusLine" class="muted" role="status" aria-live="polite"></p>
+      <div id="chips" class="chips" aria-label="Quick filters"></div>
+    </section>
+  </div>
 
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        <div class="card">
-          <h3>Daily Joy Newsletter</h3>
-          <form class="newsletter" action="https://YOUR_EMAIL_FORM_URL" method="post" target="_blank">
-            <input type="email" name="EMAIL" placeholder="you@example.com" required>
-            <button type="submit">Subscribe</button>
-          </form>
-        </div>
-        <div class="card">
-          <h3>Sponsored</h3>
-          <div class="ad ad-sidebar">
-            <ins class="adsbygoogle" style="display:block"
-                 data-ad-client="ca-pub-YOUR_ADSENSE_PUBLISHER_ID"
-                 data-ad-slot="SIDEBAR_SLOT_ID"
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
-          </div>
-        </div>
-      </aside>
-    </div>
+  <main id="main" class="wrap main-grid">
+    <section class="content">
+      <section id="grid" class="grid" aria-live="polite"></section>
+      <!-- In-feed ad (below grid or when JS injects after N cards) -->
+      <div class="ad ad-infeed">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-YOUR_ADSENSE_PUBLISHER_ID"
+             data-ad-slot="INFEED_SLOT_ID"
+             data-ad-format="fluid"
+             data-ad-layout-key="-fg+5p+6t-e7+1b"
+             data-full-width-responsive="true"></ins>
+      </div>
 
-    <!-- In-feed Ad -->
-    <div class="ad ad-infeed">
-      <ins class="adsbygoogle" style="display:block"
-           data-ad-client="ca-pub-YOUR_ADSENSE_PUBLISHER_ID"
-           data-ad-slot="INFEED_SLOT_ID"
-           data-ad-format="fluid"
-           data-ad-layout-key="-fg+5p+6t-e7+1b"
-           data-full-width-responsive="true"></ins>
-    </div>
+      <div class="center">
+        <button id="loadMoreBtn" class="ghost">Load more</button>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="card info">
+        <h3>Subscribe — Daily Joy</h3>
+        <p class="muted">A short, uplifting email to start your day ☀️</p>
+        <!-- Replace action URL with your Mailchimp/ConvertKit form post URL -->
+        <form class="newsletter" action="https://YOUR_EMAIL_PROVIDER_FORM_URL" method="post" target="_blank" novalidate>
+          <input type="email" name="EMAIL" placeholder="you@example.com" required />
+          <button type="submit">Subscribe</button>
+        </form>
+        <small class="muted">No spam. Unsubscribe anytime.</small>
+      </div>
+
+      <div class="card info sticky">
+        <h3>Sponsored</h3>
+        <div class="ad ad-sidebar">
+          <ins class="adsbygoogle"
+               style="display:block"
+               data-ad-client="ca-pub-YOUR_ADSENSE_PUBLISHER_ID"
+               data-ad-slot="SIDEBAR_SLOT_ID"
+               data-ad-format="auto"
+               data-full-width-responsive="true"></ins>
+        </div>
+      </div>
+    </aside>
   </main>
 
-  <footer class="footer wrap">
-    <p>&copy; 2025 JoyFeed News — <a href="/privacy.html">Privacy</a></p>
+  <footer class="wrap footer">
+    <div><strong>JoyFeed News</strong> — happy news, no doom.</div>
+    <div class="muted">Suggest a reputable source? <a href="mailto:hello@joyfeednews.com">Email us</a>.</div>
   </footer>
+
+  <script type="application/ld+json" id="schema-json"></script>
 </body>
 </html>

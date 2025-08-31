@@ -1,0 +1,10 @@
+
+/* Ads & newsletter */
+.ad{margin:14px 0;display:block}
+.ad-top{margin-top:10px}
+.ad-sidebar{min-height:90px}
+.ad-infeed{margin:20px 0}
+.sidebar .sticky{position:sticky;top:80px}
+.newsletter{display:flex;gap:8px;margin-top:8px}
+.newsletter input[type="email"]{flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:inherit}
+.newsletter button{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--accent);color:#062a22;font-weight:600}
